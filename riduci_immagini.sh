@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+SECONDS=0
 limit=1000000
 temporary=''
 file_list=''
@@ -46,7 +47,10 @@ if ! mkdir -m 700 -- "$lock_directory" 2>/dev/null; then
 fi
 exec {lock_fd}>>"$lock_directory/run.lock" || exit 1
 printf 'Attesa del lock...\n'
+lock_started=$SECONDS
 flock "$lock_fd" || exit 1
+processing_started=$SECONDS
+lock_seconds=$((processing_started - lock_started))
 file_list=$(mktemp "$lock_directory/files.XXXXXXXX") || exit 1
 find "$root" -type f ! -name '.imgridim.*' -print0 > "$file_list" || exit 1
 
@@ -129,4 +133,7 @@ while IFS= read -r -d '' source; do
     fi
 done < "$file_list"
 printf 'Ridotte: %d; ignorate: %d; errori: %d\n' "$modified" "$skipped" "$errors"
+elapsed=$SECONDS
+printf 'Tempo totale: %d s; attesa lock: %d s; elaborazione: %d s\n' \
+    "$elapsed" "$lock_seconds" "$((elapsed - processing_started))"
 (( errors == 0 ))

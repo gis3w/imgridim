@@ -34,7 +34,10 @@ truncate -s 1000001 "$images/animata.webp"
 ln -s "$workspace/original.jpg" "$images/link.jpg"
 unchanged=$(sha256sum -- "$images/piccola.png" "$images/esatta.png" \
     "$images/animata.webp" "$images/non-immagine.txt" "$workspace/original.jpg")
-bash "$script" "$images"
+output=$(bash "$script" "$images")
+printf '%s\n' "$output"
+[[ "$output" =~ Tempo\ totale:\ ([0-9]+)\ s\;\ attesa\ lock:\ ([0-9]+)\ s\;\ elaborazione:\ ([0-9]+)\ s ]]
+(( BASH_REMATCH[1] >= BASH_REMATCH[2] + BASH_REMATCH[3] ))
 test "$unchanged" = "$(sha256sum -- "$images/piccola.png" "$images/esatta.png" \
     "$images/animata.webp" "$images/non-immagine.txt" "$workspace/original.jpg")"
 test -L "$images/link.jpg"
